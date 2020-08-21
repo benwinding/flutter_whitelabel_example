@@ -6,10 +6,11 @@ require "nokogiri"
 
 def processConfiguration(configDir)
   puts "--- processing: #{configDir}"
-  outDir = "./builds/app-release"
   outWhitelabelDir = "./builds/app-release-" + configDir
   if (!File.directory?(outWhitelabelDir))
     puts "---- Making whitelabel folder: #{outWhitelabelDir}"
+    FileUtils.mkdir_p(outWhitelabelDir)
+    outDir = "./builds/app-release/."
     FileUtils.cp_r(outDir, outWhitelabelDir)
   end
   configData = getValidConfig(configDir)
@@ -18,6 +19,7 @@ def processConfiguration(configDir)
   copyImages(configDir, outWhitelabelDir)
   makeLabelApk(outWhitelabelDir, configDir)
   signLabelApk(outWhitelabelDir, configDir)
+  FileUtils.rm_r(outWhitelabelDir)
 end
 
 def resizeSingleImage(src, dest, w)
@@ -30,9 +32,9 @@ end
 
 def shrinkImages(configDir)
   imageSrc = "labels/" + configDir + "/ic_launcher.png"
-  destDir = "labels/" + configDir + '/_res_generated/'
+  destDir = "labels/" + configDir + "/_res_generated/"
   imName = "ic_launcher.png"
-  puts "---- resizing mipmaps: " + imageSrc + ' (72, 48, 96, 144, 192)'
+  puts "---- resizing mipmaps: " + imageSrc + " (72, 48, 96, 144, 192)"
   resizeSingleImage(imageSrc, destDir + "mipmap-hdpi/" + imName, 72)
   resizeSingleImage(imageSrc, destDir + "mipmap-mdpi/" + imName, 48)
   resizeSingleImage(imageSrc, destDir + "mipmap-xhdpi/" + imName, 96)
@@ -41,8 +43,8 @@ def shrinkImages(configDir)
 end
 
 def copyImages(configDir, outWhitelabelDir)
-  srcDir = "labels/" + configDir + '/_res_generated/.'
-  destDir = outWhitelabelDir + '/res'
+  srcDir = "labels/" + configDir + "/_res_generated/."
+  destDir = outWhitelabelDir + "/res"
   puts "---- replacing images"
   FileUtils.cp_r(srcDir, destDir)
 end
@@ -50,7 +52,7 @@ end
 def makeLabelApk(outWhitelabelDir, configName)
   whitelabelApkPath = "./builds/app-release-" + configName + ".apk"
   puts "---- Building APK: " + whitelabelApkPath
-  if File.file?(whitelabelApkPath) 
+  if File.file?(whitelabelApkPath)
     FileUtils.rm(whitelabelApkPath)
   end
   system("apktool b " + outWhitelabelDir + " -o " + whitelabelApkPath)
@@ -60,7 +62,7 @@ def signLabelApk(outWhitelabelDir, configName)
   whitelabelApkPath = "./builds/app-release-" + configName + ".apk"
   keyPath = "labels/" + configName + "/my-release-key.keystore"
   puts "---- Signing APK: " + whitelabelApkPath
-  system("jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "+keyPath+" "+whitelabelApkPath+" alias_name -storepass aaaaaa")
+  system("jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore " + keyPath + " " + whitelabelApkPath + " alias_name -storepass aaaaaa")
 end
 
 def updateManifest(configData, outWhitelabelDir)
@@ -103,9 +105,18 @@ end
 
 def Setup()
   outDir = "./builds/app-release"
+  buildFile = "./builds/app-release.apk"
+  FileUtils.mkdir_p('./builds')
+  if !File.file?(buildFile)
+    appBuildFile = "./app/build/app/outputs/flutter-apk/app-release.apk"
+    if !File.file?(appBuildFile)
+      raise "The app needs to be built first, could not find the file: " + appBuildFile
+    end
+    FileUtils.cp(appBuildFile, buildFile)
+  end
   if !File.directory?(outDir)
     puts "Decompressing app-release.apk"
-    system("apktool d ./builds/app-release.apk -o " + outDir)
+    system("apktool d " + buildFile + " -o " + outDir)
   end
 end
 
