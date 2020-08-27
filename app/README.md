@@ -1,4 +1,4 @@
-# test_flutter_white_label
+# flutter_whitelabel_example
 
 A new Flutter project.
 

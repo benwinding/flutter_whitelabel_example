@@ -1,4 +1,4 @@
-package com.example.test_flutter_white_label
+package com.example.flutter_whitelabel_example
 
 import io.flutter.embedding.android.FlutterActivity
 
